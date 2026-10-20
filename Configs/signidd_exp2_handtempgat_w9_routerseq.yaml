@@ -1,0 +1,107 @@
+data:
+    src: "gloss"
+    trg: "skels"
+    files: "files"
+
+    train: "../Data/PHOENIX14T/train"
+    dev: "../Data/PHOENIX14T/dev"
+    test: "../Data/PHOENIX14T/test"
+
+    max_sent_length: 300
+    skip_frames: 1
+    src_vocab: "./Configs/src_vocab.txt"
+
+training:
+    random_seed: 27
+    optimizer: "adam"
+    learning_rate: 0.001
+    learning_rate_min: 0.0002
+    weight_decay: 0.0
+    clip_grad_norm: 5.0
+    batch_size: 64
+    scheduling: "plateau"
+    patience: 7
+    decrease_factor: 0.7
+    early_stopping_metric: "dtw"
+    epochs: 20000
+    validation_freq: 2000
+    logging_freq: 250
+    eval_metric: "dtw"
+    model_dir: "./Models/signidd_exp2_handtempgat_w9_routerseq"
+    overwrite: False
+    continue: False
+    shuffle: True
+    use_cuda: True
+    max_output_length: 300
+    keep_last_ckpts: 1
+    loss: "L1"
+    bone_loss: "MSE"
+
+model:
+    # Exp2 ablation: w9 baseline, sequence-level MoE router (masked mean + timestep)
+    use_hierGAT_part5_generalMoE_last: True
+    use_gat_skelinit_timestep_lowrank: False
+    loss_scale: 1.0
+    initializer: "xavier"
+    bias_initializer: "zeros"
+    embed_initializer: "xavier"
+    trg_size: 150
+    just_count_in: False
+    gaussian_noise: False
+    noise_rate: 5
+    future_prediction: 0
+    encoder:
+        type: "transformer"
+        num_layers: 2
+        num_heads: 4
+        embeddings:
+            embedding_dim: 512
+            dropout: 0.0
+        hidden_size: 512
+        ff_size: 2048
+        dropout: 0.0
+    diffusion:
+        timesteps: 1000
+        sampling_timesteps: 5
+        scale: 1.0
+        num_layers: 2
+        num_focal_layers: 3
+        num_heads: 4
+        gcn_hidden_size: 16
+        gat_channels: 64
+        gat_heads: 4
+        head_dim: 16
+        gat_use_condition_gate: False
+        gat_graph_bias_init: skeleton
+        gat_dense: True
+        use_skeleton_hard_mask: False
+        use_timestep_lowrank_bias: True
+        use_part_gat: true
+        part_gat_num_parts: 5
+        part_gat_channels: 64
+        part_gat_heads: 2
+        part_gat_bias_init: zero
+        part_gate_init: 0.0
+        # HandTemporalGAT on all Focal blocks (no only_last_block / last_n_blocks)
+        use_hand_temporal_gat: true
+        hand_temporal_window: 9
+        hand_temporal_heads: 4
+        hand_temporal_gate_init: 0.0
+        hand_joint_start: 8
+        hand_joint_end: 50
+        use_stage_separated_focal: false
+        general_moe_num_experts: 4
+        general_moe_top_k: 2
+        general_moe_hidden_mult: 2
+        general_moe_load_balance_weight: 0.001
+        general_moe_z_loss_weight: 0.0001
+        # Router sees masked mean of valid frames plus the timestep embedding
+        moe_router_use_time: True
+        moe_router_use_frame: True
+        moe_router_pool: sequence
+        hidden_size: 512
+        ff_size: 2048
+        dropout: 0.1
+        embeddings:
+          embedding_dim: 512
+          dropout: 0.1
